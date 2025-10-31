@@ -1,18 +1,51 @@
 package org.lflang.target.property;
 
-/** Directive to enable Segger SystemView technology.
- * 
- * TODO: Change to a more general property the user can use to not only
- * enable/disable SystemView, but also enable automatic SystemView
- * code generation for the generated code.
+import org.lflang.MessageReporter;
+import org.lflang.ast.ASTUtils;
+import org.lflang.lf.Element;
+import org.lflang.target.property.type.SystemViewType;
+import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
+
+/**
+ * Directive to enable Segger SystemView technology.
+ * By default, SystemView is disabled (NONE).
+ *
+ * The following settings are supported:
+ * <ul>
+ *   <li>NONE: Disable SystemView technology.</li>
+ *   <li>ENABLE: Enable SystemView technology.</li>
+ *   <li>ENABLE_AND_INSTRUMENT: Enable SystemView and automatically insert
+ *       instrumentation code (e.g., to log task switches) where possible.</li>
+ * </ul>
+ *
+ * @implNote Currently, this property only works for Zephyr targets.
  */
-public final class SystemViewProperty extends BooleanProperty {
+public final class SystemViewProperty extends TargetProperty<SystemViewSetting, SystemViewType> {
 
   /** Singleton target property instance. */
   public static final SystemViewProperty INSTANCE = new SystemViewProperty();
 
   private SystemViewProperty() {
-    super();
+    super(new SystemViewType());
+  }
+
+  @Override
+  public SystemViewSetting initialValue() {
+    return SystemViewSetting.getDefault();
+  }
+
+  @Override
+  protected SystemViewSetting fromAst(Element node, MessageReporter reporter) {
+    return fromString(ASTUtils.elementToSingleString(node), reporter);
+  }
+
+  protected SystemViewSetting fromString(String string, MessageReporter reporter) {
+    return SystemViewSetting.valueOf(string.toUpperCase());
+  }
+
+  @Override
+  public Element toAstElement(SystemViewSetting value) {
+    return ASTUtils.toElement(value.toString());
   }
 
   @Override

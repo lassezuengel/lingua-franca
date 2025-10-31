@@ -19,9 +19,11 @@ import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.PlatformProperty.Option;
 import org.lflang.target.property.ProtobufsProperty;
 import org.lflang.target.property.SingleThreadedProperty;
+import org.lflang.target.property.SystemViewProperty;
 import org.lflang.target.property.TracePluginProperty;
 import org.lflang.target.property.WorkersProperty;
 import org.lflang.target.property.type.PlatformType.Platform;
+import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.FileUtil;
 
 /**
@@ -312,6 +314,15 @@ public class CCmakeGenerator {
       cMakeCode.pr("set(LF_TRACE_PLUGIN " + tracePlugin + " CACHE STRING \"\")\n");
     }
 
+    boolean useSystemView =
+        targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
+
+    if(useSystemView && platformOptions.platform() != Platform.ZEPHYR) {
+      messageReporter
+          .nowhere()
+          .warning("Right now, SystemView property is only supported for Zephyr targets. Ignoring setting.");
+    }
+
     // Setup main target for different platforms
     switch (platformOptions.platform()) {
       case ZEPHYR:
@@ -320,7 +331,10 @@ public class CCmakeGenerator {
                 hasMain,
                 executableName,
                 Stream.concat(additionalSources.stream(), sources.stream())));
-        cMakeCode.pr(setUpSeggerDependencies());
+
+        if (useSystemView) {  
+          cMakeCode.pr(setUpSeggerDependencies());
+        }
         break;
       case RP2040:
         cMakeCode.pr(
