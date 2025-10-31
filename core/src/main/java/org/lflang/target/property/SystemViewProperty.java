@@ -3,6 +3,7 @@ package org.lflang.target.property;
 import org.lflang.MessageReporter;
 import org.lflang.ast.ASTUtils;
 import org.lflang.lf.Element;
+import org.lflang.target.property.type.BuildTypeType.BuildType;
 import org.lflang.target.property.type.SystemViewType;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 
@@ -35,17 +36,17 @@ public final class SystemViewProperty extends TargetProperty<SystemViewSetting, 
   }
 
   @Override
+  public Element toAstElement(SystemViewSetting value) {
+    return ASTUtils.toElement(value.toString());
+  }
+
+  @Override
   protected SystemViewSetting fromAst(Element node, MessageReporter reporter) {
     return fromString(ASTUtils.elementToSingleString(node), reporter);
   }
 
   protected SystemViewSetting fromString(String string, MessageReporter reporter) {
-    return SystemViewSetting.valueOf(string.toUpperCase());
-  }
-
-  @Override
-  public Element toAstElement(SystemViewSetting value) {
-    return ASTUtils.toElement(value.toString());
+    return this.type.forName(string);
   }
 
   @Override
