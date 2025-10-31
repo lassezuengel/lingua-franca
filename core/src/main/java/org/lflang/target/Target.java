@@ -563,6 +563,7 @@ public enum Target {
               ProtobufsProperty.INSTANCE,
               SchedulerProperty.INSTANCE,
               SingleThreadedProperty.INSTANCE,
+              SystemViewProperty.INSTANCE,
               TracingProperty.INSTANCE,
               TracePluginProperty.INSTANCE,
               VerifyProperty.INSTANCE,

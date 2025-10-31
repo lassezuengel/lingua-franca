@@ -320,6 +320,7 @@ public class CCmakeGenerator {
                 hasMain,
                 executableName,
                 Stream.concat(additionalSources.stream(), sources.stream())));
+        cMakeCode.pr(setUpSeggerDependencies());
         break;
       case RP2040:
         cMakeCode.pr(
@@ -563,6 +564,24 @@ public class CCmakeGenerator {
     code.unindent();
     code.pr(")");
     code.newLine();
+    return code.toString();
+  }
+
+  /**
+   * Adds Segger dependencies to Zephyr target.
+   */
+  private static String setUpSeggerDependencies() {
+    var code = new CodeBuilder();
+    code.pr("target_link_libraries(app PRIVATE");
+    code.indent();
+    code.pr("\"-Wl,--start-group\"");
+    code.pr("modules__segger");
+    code.pr("zephyr");
+    code.pr("\"-Wl,--end-group\"");
+    code.unindent();
+    code.pr(")");
+    code.newLine();
+
     return code.toString();
   }
 
