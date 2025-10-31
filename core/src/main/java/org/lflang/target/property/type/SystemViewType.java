@@ -1,5 +1,9 @@
 package org.lflang.target.property.type;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 
 /**
@@ -31,6 +35,10 @@ public class SystemViewType extends OptionsType<SystemViewSetting> {
     @Override
     public String toString() {
       return this.alias;
+    }
+
+    public static List<SystemViewSetting> optionsList() {
+      return Arrays.stream(SystemViewSetting.values()).collect(Collectors.toList());
     }
 
     public static SystemViewSetting getDefault() {
