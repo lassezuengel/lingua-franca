@@ -35,6 +35,11 @@ import org.lflang.lf.Variable;
 import org.lflang.lf.Watchdog;
 import org.lflang.target.TargetConfig;
 import org.lflang.target.property.NoSourceMappingProperty;
+import org.lflang.target.property.PlatformProperty;
+import org.lflang.target.property.SystemViewProperty;
+import org.lflang.target.property.type.PlatformType;
+import org.lflang.target.property.type.PlatformType.Platform;
+import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.StringUtil;
 
 /**
@@ -1185,7 +1190,8 @@ public class CReactionGenerator {
             generateReactionFunctionHeader(tpr, reactionIndex),
             init,
             getCode(types, reaction, tpr),
-            suppressLineDirectives));
+            suppressLineDirectives,
+            targetConfig));
     // Now generate code for the late function, if there is one
     // Note that this function can only be defined on reactions
     // in federates that have inputs from a logical connection.
@@ -1196,7 +1202,8 @@ public class CReactionGenerator {
                 generateStpFunctionHeader(tpr, reactionIndex),
                 init,
                 reaction.getTardy().getCode(),
-                suppressLineDirectives));
+                suppressLineDirectives,
+                targetConfig));
       }
     } else if (reaction.getStp() != null) {
       // Handle STAA or STP for backward compatibility.
@@ -1205,7 +1212,8 @@ public class CReactionGenerator {
               generateStpFunctionHeader(tpr, reactionIndex),
               init,
               reaction.getStp().getCode(),
-              suppressLineDirectives));
+              suppressLineDirectives,
+              targetConfig));
     }
 
     // Now generate code for the deadline violation function, if there is one.
@@ -1215,7 +1223,8 @@ public class CReactionGenerator {
               generateDeadlineFunctionHeader(tpr, reactionIndex),
               init,
               reaction.getDeadline().getCode(),
-              suppressLineDirectives));
+              suppressLineDirectives,
+              targetConfig));
     }
     CMethodGenerator.generateMacroUndefsForMethods(tpr.reactor(), code);
     code.pr("#include " + StringUtil.addDoubleQuotes(CCoreFilesUtils.getCTargetSetUndefHeader()));
@@ -1236,14 +1245,36 @@ public class CReactionGenerator {
   }
 
   public static String generateFunction(
-      String header, String init, Code code, boolean suppressLineDirectives) {
+      String header, String init, Code code, boolean suppressLineDirectives, TargetConfig targetConfig) {
+    var platformOptions = targetConfig.getOrDefault(PlatformProperty.INSTANCE);
+    // Use the function name in the instrumentation calls, for unique IDs and recognizable names.
+    // 
+    // HACK: This code naively extracts function name from header. Not nice because it assumes a certain format,
+    //       and because the function name was already calculated at some point, there really is no reason
+    //       to do this again here. The function header should just be an abstract data type that
+    //       exposes the function name as well as the header, or we should pass the function name as a
+    //       separate argument.
+    var functionName = header.substring(5, header.indexOf('(')).trim();
+    var generateInstrumentation =
+        platformOptions.platform() == Platform.ZEPHYR &&
+        targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT;
+    
     var function = new CodeBuilder();
     function.pr(header + " {");
     function.indent();
     function.pr(init);
+
+    if(generateInstrumentation) {
+      function.pr("SEGGER_SYSVIEW_RecordEnterISR();");
+      function.pr("SEGGER_SYSVIEW_NameResource((uintptr_t)" + functionName + ", \"" + functionName + "\");");
+    }
     function.prSourceLineNumber(code, suppressLineDirectives);
     function.pr(ASTUtils.toText(code));
+    if(generateInstrumentation) {
+      function.pr("SEGGER_SYSVIEW_RecordExitISR();");
+    }
     function.prEndSourceLineNumber(suppressLineDirectives);
+
     function.unindent();
     function.pr("}");
     return function.toString();
