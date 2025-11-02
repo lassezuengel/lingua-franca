@@ -1258,20 +1258,21 @@ public class CReactionGenerator {
     var generateInstrumentation =
         platformOptions.platform() == Platform.ZEPHYR &&
         targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT;
-    
+    var uniqueIdExpression = "(uintptr_t)" + functionName;
+
     var function = new CodeBuilder();
     function.pr(header + " {");
     function.indent();
     function.pr(init);
 
     if(generateInstrumentation) {
-      function.pr("SEGGER_SYSVIEW_RecordEnterISR();");
-      function.pr("SEGGER_SYSVIEW_NameResource((uintptr_t)" + functionName + ", \"" + functionName + "\");");
+      function.pr("SEGGER_SYSVIEW_OnTaskStartExec(" + uniqueIdExpression + ");");
+      function.pr("SEGGER_SYSVIEW_NameResource(" + uniqueIdExpression + ", \"" + functionName + "\");");
     }
     function.prSourceLineNumber(code, suppressLineDirectives);
     function.pr(ASTUtils.toText(code));
     if(generateInstrumentation) {
-      function.pr("SEGGER_SYSVIEW_RecordExitISR();");
+      function.pr("SEGGER_SYSVIEW_OnTaskStopExec();");
     }
     function.prEndSourceLineNumber(suppressLineDirectives);
 
