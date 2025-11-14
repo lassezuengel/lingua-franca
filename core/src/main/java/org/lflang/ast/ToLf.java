@@ -914,11 +914,13 @@ public class ToLf extends LfSwitch<MalleableString> {
 
   @Override
   public MalleableString caseKeyValuePair(KeyValuePair object) {
+    var val = object.getValue();
+
     // name=Kebab ':' value=Element
     return new Builder()
         .append(object.getName())
         .append(": ")
-        .append(doSwitch(object.getValue()))
+        .append(val != null ? doSwitch(val) : "null")
         .get();
   }
 
