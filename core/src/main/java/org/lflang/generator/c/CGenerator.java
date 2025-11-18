@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,9 +82,11 @@ import org.lflang.target.property.PlatformProperty.PlatformOption;
 import org.lflang.target.property.ProtobufsProperty;
 import org.lflang.target.property.SchedulerProperty;
 import org.lflang.target.property.SingleThreadedProperty;
+import org.lflang.target.property.SystemViewProperty;
 import org.lflang.target.property.TracingProperty;
 import org.lflang.target.property.WorkersProperty;
 import org.lflang.target.property.type.PlatformType.Platform;
+import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.ArduinoUtil;
 import org.lflang.util.FileUtil;
 import org.lflang.util.FlexPRETUtil;
@@ -895,7 +898,7 @@ public class CGenerator extends GeneratorBase {
         }
         case ZEPHYR -> {
           // For the Zephyr target, copy default config and board files.
-          copyZephyrProjectConfig();
+          generateZephyrProjectConfig();
 
           FileUtil.copyFromClassPath(
               "/lib/platform/zephyr/boards", fileConfig.getSrcGenPath(), false, false);
@@ -943,30 +946,71 @@ public class CGenerator extends GeneratorBase {
     }
   }
 
-  /**
-   * Choose and copy the appropriate Zephyr project configuration file.
-   */
-  private void copyZephyrProjectConfig() throws IOException {
+  private void generateZephyrProjectConfig() {
     Path destDir = fileConfig.getSrcGenPath();
-    
-    // TODO: `targetConfig.isFederated()` does not work here because only the main LFC run is
-    //       federated, and this is a recursive run for one of the federates, which is not a
-    //       distributed program itself.
-    //       How can we check if the main program is federated here?
-    var isFederated = destDir.toString().contains("/fed-gen/");
-    
-    Path finalDest = destDir.resolve("prj_lf.conf");
-    String sourceConf = isFederated
-        ? "/lib/platform/zephyr/prj_fed_lf.conf"
-        : "/lib/platform/zephyr/prj_lf.conf";
-    
-    FileUtil.copyFileFromClassPath(sourceConf, destDir, true);
 
-    // Rename the copied file to the desired name
-    Path copiedFile = destDir.resolve(Paths.get(sourceConf).getFileName());
-    if (!copiedFile.equals(finalDest)) {
-        Files.move(copiedFile, finalDest, StandardCopyOption.REPLACE_EXISTING);
-    } 
+    // TODO: `targetConfig.isFederated()` does not work here because for zephyr federate builds,
+    //       only the main LFC run is federated, and this is would be a recursive run for one
+    //       of the federates, which is not a distributed program itself.
+    //       How can we check if the main program is federated here?
+    var isFederated   = destDir.toString().contains("/fed-gen/");
+    var useSystemView = targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
+
+    if(isFederated && useSystemView) {
+      messageReporter
+          .nowhere()
+          .error("SEGGER SystemView is not yet supported for federated Zephyr programs!");
+    }
+
+    CZephyrConfig config = new CZephyrConfig();
+
+    config.comment("Lingua Franca Zephyr configuration file")
+          .comment("This is a generated file, do not edit.")
+          .blank()
+          .property("CONFIG_PRINTK", "y");
+    
+    if (isFederated) {
+      // For federated programs, we need to use picolib because newlib does not support
+      // regex funcitonality.
+      config.property("CONFIG_PICOLIBC", "y");
+      
+      config.heading("POSIX sockets and networking")
+            .property("CONFIG_NETWORKING", "y")
+            .property("CONFIG_NET_IPV4", "y")
+            .property("CONFIG_NET_TCP", "y")
+            .property("CONFIG_NET_SOCKETS", "y")
+            .property("CONFIG_NET_SOCKETS_POSIX_NAMES", "y")
+            .property("CONFIG_POSIX_API", "y");
+    } else {
+      config.property("CONFIG_NEWLIB_LIBC", "y")
+            .property("CONFIG_NEWLIB_LIBC_FLOAT_PRINTF", "y")
+            .property("CONFIG_MAIN_STACK_SIZE", "2048");
+    }
+          
+    config.property("CONFIG_THREAD_CUSTOM_DATA", "y");
+
+    if (useSystemView) {
+      config.heading("SEGGER SystemView support")
+            .property("CONFIG_SEGGER_SYSTEMVIEW", "y")
+            .property("CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
+            .property("CONFIG_SEGGER_SYSVIEW_RTT_CHANNEL", "1")
+            .property("CONFIG_SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
+            .property("CONFIG_USE_SEGGER_RTT", "y")
+            .property("CONFIG_TRACING", "y")
+            .property("CONFIG_THREAD_NAME", "y")
+            .property("CONFIG_SCHED_THREAD_USAGE", "y");
+    }
+
+    Path finalDest = destDir.resolve("prj_lf.conf");
+    try {
+      var output = config.generateOutput();
+
+      Files.writeString(finalDest, output);
+    } catch (IOException e) {
+      messageReporter
+          .nowhere()
+          .error("Failed to write Zephyr project configuration file to " + finalDest);
+    }
   }
 
   ////////////////////////////////////////////
