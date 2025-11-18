@@ -14,8 +14,10 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -893,11 +895,10 @@ public class CGenerator extends GeneratorBase {
         }
         case ZEPHYR -> {
           // For the Zephyr target, copy default config and board files.
+          copyZephyrProjectConfig();
+
           FileUtil.copyFromClassPath(
               "/lib/platform/zephyr/boards", fileConfig.getSrcGenPath(), false, false);
-          FileUtil.copyFileFromClassPath(
-              "/lib/platform/zephyr/prj_lf.conf", fileConfig.getSrcGenPath(), true);
-
           FileUtil.copyFileFromClassPath(
               "/lib/platform/zephyr/Kconfig", fileConfig.getSrcGenPath(), true);
         }
@@ -940,6 +941,32 @@ public class CGenerator extends GeneratorBase {
         }
       }
     }
+  }
+
+  /**
+   * Choose and copy the appropriate Zephyr project configuration file.
+   */
+  private void copyZephyrProjectConfig() throws IOException {
+    Path destDir = fileConfig.getSrcGenPath();
+    
+    // TODO: `targetConfig.isFederated()` does not work here because only the main LFC run is
+    //       federated, and this is a recursive run for one of the federates, which is not a
+    //       distributed program itself.
+    //       How can we check if the main program is federated here?
+    var isFederated = destDir.toString().contains("/fed-gen/");
+    
+    Path finalDest = destDir.resolve("prj_lf.conf");
+    String sourceConf = isFederated
+        ? "/lib/platform/zephyr/prj_fed_lf.conf"
+        : "/lib/platform/zephyr/prj_lf.conf";
+    
+    FileUtil.copyFileFromClassPath(sourceConf, destDir, true);
+
+    // Rename the copied file to the desired name
+    Path copiedFile = destDir.resolve(Paths.get(sourceConf).getFileName());
+    if (!copiedFile.equals(finalDest)) {
+        Files.move(copiedFile, finalDest, StandardCopyOption.REPLACE_EXISTING);
+    } 
   }
 
   ////////////////////////////////////////////
