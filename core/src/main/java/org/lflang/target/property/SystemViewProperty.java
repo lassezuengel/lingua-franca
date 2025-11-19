@@ -3,6 +3,10 @@ package org.lflang.target.property;
 import org.lflang.MessageReporter;
 import org.lflang.ast.ASTUtils;
 import org.lflang.lf.Element;
+import org.lflang.lf.LfPackage.Literals;
+import org.lflang.target.Target;
+import org.lflang.target.TargetConfig;
+import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.SystemViewType;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 
@@ -51,5 +55,26 @@ public final class SystemViewProperty extends TargetProperty<SystemViewSetting, 
   @Override
   public String name() {
     return "systemview";
+  }
+
+  @Override
+  public void validate(TargetConfig config, MessageReporter reporter) {
+    var platform = config.getOrDefault(PlatformProperty.INSTANCE).platform();
+
+    if (platform != Platform.ZEPHYR) {
+      reporter
+          .at(config.lookup(this), Literals.KEY_VALUE_PAIR__NAME)
+          .error(
+              String.format(
+                  "Platform '%s' does not support the 'systemview' property.", platform.name()));
+    }
+
+    if (config.target != Target.C) {
+      reporter
+          .at(config.lookup(this), Literals.KEY_VALUE_PAIR__NAME)
+          .error(
+              String.format(
+                  "Target '%s' does not support the 'systemview' property.", config.target.name()));
+    }
   }
 }

@@ -952,7 +952,8 @@ public class CGenerator extends GeneratorBase {
     //       of the federates, which is not a distributed program itself.
     //       How can we check if the main program is federated here?
     var isFederated = destDir.toString().contains("/fed-gen/");
-    var useSystemView = targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
+    var useSystemView =
+        targetConfig.getOrDefault(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
 
     if (isFederated && useSystemView) {
       messageReporter

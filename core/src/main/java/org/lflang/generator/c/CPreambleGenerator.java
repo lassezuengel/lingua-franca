@@ -62,7 +62,8 @@ public class CPreambleGenerator {
       code.pr("#include \"trace/api/trace.h\"");
     }
 
-    if (targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT) {
+    if (targetConfig.getOrDefault(SystemViewProperty.INSTANCE)
+        == SystemViewSetting.ENABLE_AND_INSTRUMENT) {
       code.pr(
           String.join(
               "\n",

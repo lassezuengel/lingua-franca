@@ -314,15 +314,8 @@ public class CCmakeGenerator {
       cMakeCode.pr("set(LF_TRACE_PLUGIN " + tracePlugin + " CACHE STRING \"\")\n");
     }
 
-    boolean useSystemView = targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
-
-    if (useSystemView && platformOptions.platform() != Platform.ZEPHYR) {
-      messageReporter
-          .nowhere()
-          .warning(
-              "Right now, SystemView property is only supported for Zephyr targets. Ignoring"
-                  + " setting.");
-    }
+    boolean useSystemView =
+        targetConfig.getOrDefault(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
 
     // Setup main target for different platforms
     switch (platformOptions.platform()) {

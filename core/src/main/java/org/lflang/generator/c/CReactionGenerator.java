@@ -35,9 +35,7 @@ import org.lflang.lf.Variable;
 import org.lflang.lf.Watchdog;
 import org.lflang.target.TargetConfig;
 import org.lflang.target.property.NoSourceMappingProperty;
-import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.SystemViewProperty;
-import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.StringUtil;
 
@@ -1249,7 +1247,6 @@ public class CReactionGenerator {
       Code code,
       boolean suppressLineDirectives,
       TargetConfig targetConfig) {
-    var platformOptions = targetConfig.getOrDefault(PlatformProperty.INSTANCE);
     // Use the function name in the instrumentation calls, for unique IDs and recognizable names.
     //
     // HACK: This code naively extracts function name from header. Not nice because it assumes a
@@ -1262,9 +1259,8 @@ public class CReactionGenerator {
     //       separate argument.
     var functionName = header.substring(5, header.indexOf('(')).trim();
     var generateInstrumentation =
-        platformOptions.platform() == Platform.ZEPHYR
-            && targetConfig.get(SystemViewProperty.INSTANCE)
-                == SystemViewSetting.ENABLE_AND_INSTRUMENT;
+        targetConfig.getOrDefault(SystemViewProperty.INSTANCE)
+            == SystemViewSetting.ENABLE_AND_INSTRUMENT;
     var uniqueIdExpression = "(uintptr_t)" + functionName;
 
     var function = new CodeBuilder();
