@@ -9,8 +9,10 @@ import org.lflang.target.property.FedSetupProperty;
 import org.lflang.target.property.LoggingProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.SingleThreadedProperty;
+import org.lflang.target.property.SystemViewProperty;
 import org.lflang.target.property.TracingProperty;
 import org.lflang.target.property.type.PlatformType.Platform;
+import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.StringUtil;
 
 /**
@@ -59,6 +61,21 @@ public class CPreambleGenerator {
     if (targetConfig.get(TracingProperty.INSTANCE).isEnabled()) {
       code.pr("#include \"trace/api/trace.h\"");
     }
+
+    if(targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT) {
+      code.pr(String.join(
+        "\n",
+        "#include <SEGGER_SYSVIEW.h>",
+        "static int lf_sysview_init(const struct device *dev) {",
+        "  ARG_UNUSED(dev);",
+        "  SEGGER_SYSVIEW_Conf(); ",
+        "  SEGGER_SYSVIEW_Start(); ",
+        "  return 0; ",
+        "}",
+        "SYS_INIT(lf_sysview_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);"
+      ));
+    }
+
     code.pr("#include \"include/core/mixed_radix.h\"");
     code.pr("#include \"include/core/port.h\"");
     code.pr("#include \"include/core/environment.h\"");

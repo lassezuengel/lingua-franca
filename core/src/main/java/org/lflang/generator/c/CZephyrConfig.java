@@ -63,7 +63,7 @@ public class CZephyrConfig {
         for (ConfigElement e : this.elements) {
             if (e instanceof Comment c) {
                 sb.append("# ").append(c.text()).append("\n");
-            } else if (e instanceof BlankLine b) {
+            } else if (e instanceof BlankLine) {
                 sb.append("\n");
             } else if (e instanceof PropertyAssignment p) {
                 sb.append(p.key()).append("=").append(p.value()).append("\n");
