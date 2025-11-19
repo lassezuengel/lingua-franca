@@ -3,7 +3,6 @@ package org.lflang.target.property.type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 
 /**

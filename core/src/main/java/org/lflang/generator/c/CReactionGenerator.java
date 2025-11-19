@@ -37,7 +37,6 @@ import org.lflang.target.TargetConfig;
 import org.lflang.target.property.NoSourceMappingProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.SystemViewProperty;
-import org.lflang.target.property.type.PlatformType;
 import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.StringUtil;
@@ -1245,19 +1244,27 @@ public class CReactionGenerator {
   }
 
   public static String generateFunction(
-      String header, String init, Code code, boolean suppressLineDirectives, TargetConfig targetConfig) {
+      String header,
+      String init,
+      Code code,
+      boolean suppressLineDirectives,
+      TargetConfig targetConfig) {
     var platformOptions = targetConfig.getOrDefault(PlatformProperty.INSTANCE);
     // Use the function name in the instrumentation calls, for unique IDs and recognizable names.
-    // 
-    // HACK: This code naively extracts function name from header. Not nice because it assumes a certain format,
-    //       and because the function name was already calculated at some point, there really is no reason
+    //
+    // HACK: This code naively extracts function name from header. Not nice because it assumes a
+    // certain format,
+    //       and because the function name was already calculated at some point, there really is no
+    // reason
     //       to do this again here. The function header should just be an abstract data type that
-    //       exposes the function name as well as the header, or we should pass the function name as a
+    //       exposes the function name as well as the header, or we should pass the function name as
+    // a
     //       separate argument.
     var functionName = header.substring(5, header.indexOf('(')).trim();
     var generateInstrumentation =
-        platformOptions.platform() == Platform.ZEPHYR &&
-        targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT;
+        platformOptions.platform() == Platform.ZEPHYR
+            && targetConfig.get(SystemViewProperty.INSTANCE)
+                == SystemViewSetting.ENABLE_AND_INSTRUMENT;
     var uniqueIdExpression = "(uintptr_t)" + functionName;
 
     var function = new CodeBuilder();
@@ -1265,13 +1272,14 @@ public class CReactionGenerator {
     function.indent();
     function.pr(init);
 
-    if(generateInstrumentation) {
+    if (generateInstrumentation) {
       function.pr("SEGGER_SYSVIEW_OnTaskStartExec(" + uniqueIdExpression + ");");
-      function.pr("SEGGER_SYSVIEW_NameResource(" + uniqueIdExpression + ", \"" + functionName + "\");");
+      function.pr(
+          "SEGGER_SYSVIEW_NameResource(" + uniqueIdExpression + ", \"" + functionName + "\");");
     }
     function.prSourceLineNumber(code, suppressLineDirectives);
     function.pr(ASTUtils.toText(code));
-    if(generateInstrumentation) {
+    if (generateInstrumentation) {
       function.pr("SEGGER_SYSVIEW_OnTaskStopExec();");
     }
     function.prEndSourceLineNumber(suppressLineDirectives);

@@ -314,13 +314,14 @@ public class CCmakeGenerator {
       cMakeCode.pr("set(LF_TRACE_PLUGIN " + tracePlugin + " CACHE STRING \"\")\n");
     }
 
-    boolean useSystemView =
-        targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
+    boolean useSystemView = targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
 
-    if(useSystemView && platformOptions.platform() != Platform.ZEPHYR) {
+    if (useSystemView && platformOptions.platform() != Platform.ZEPHYR) {
       messageReporter
           .nowhere()
-          .warning("Right now, SystemView property is only supported for Zephyr targets. Ignoring setting.");
+          .warning(
+              "Right now, SystemView property is only supported for Zephyr targets. Ignoring"
+                  + " setting.");
     }
 
     // Setup main target for different platforms
@@ -332,7 +333,7 @@ public class CCmakeGenerator {
                 executableName,
                 Stream.concat(additionalSources.stream(), sources.stream())));
 
-        if (useSystemView) {  
+        if (useSystemView) {
           cMakeCode.pr(setUpSeggerDependencies());
         }
         break;

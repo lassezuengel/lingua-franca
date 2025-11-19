@@ -62,18 +62,18 @@ public class CPreambleGenerator {
       code.pr("#include \"trace/api/trace.h\"");
     }
 
-    if(targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT) {
-      code.pr(String.join(
-        "\n",
-        "#include <SEGGER_SYSVIEW.h>",
-        "static int lf_sysview_init(const struct device *dev) {",
-        "  ARG_UNUSED(dev);",
-        "  SEGGER_SYSVIEW_Conf(); ",
-        "  SEGGER_SYSVIEW_Start(); ",
-        "  return 0; ",
-        "}",
-        "SYS_INIT(lf_sysview_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);"
-      ));
+    if (targetConfig.get(SystemViewProperty.INSTANCE) == SystemViewSetting.ENABLE_AND_INSTRUMENT) {
+      code.pr(
+          String.join(
+              "\n",
+              "#include <SEGGER_SYSVIEW.h>",
+              "static int lf_sysview_init(const struct device *dev) {",
+              "  ARG_UNUSED(dev);",
+              "  SEGGER_SYSVIEW_Conf(); ",
+              "  SEGGER_SYSVIEW_Start(); ",
+              "  return 0; ",
+              "}",
+              "SYS_INIT(lf_sysview_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);"));
     }
 
     code.pr("#include \"include/core/mixed_radix.h\"");

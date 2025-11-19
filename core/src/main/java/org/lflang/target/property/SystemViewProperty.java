@@ -3,7 +3,6 @@ package org.lflang.target.property;
 import org.lflang.MessageReporter;
 import org.lflang.ast.ASTUtils;
 import org.lflang.lf.Element;
-import org.lflang.target.property.type.BuildTypeType.BuildType;
 import org.lflang.target.property.type.SystemViewType;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 

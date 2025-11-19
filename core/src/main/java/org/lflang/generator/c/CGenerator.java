@@ -17,9 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -953,10 +951,10 @@ public class CGenerator extends GeneratorBase {
     //       only the main LFC run is federated, and this is would be a recursive run for one
     //       of the federates, which is not a distributed program itself.
     //       How can we check if the main program is federated here?
-    var isFederated   = destDir.toString().contains("/fed-gen/");
+    var isFederated = destDir.toString().contains("/fed-gen/");
     var useSystemView = targetConfig.get(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
 
-    if(isFederated && useSystemView) {
+    if (isFederated && useSystemView) {
       messageReporter
           .nowhere()
           .error("SEGGER SystemView is not yet supported for federated Zephyr programs!");
@@ -964,41 +962,45 @@ public class CGenerator extends GeneratorBase {
 
     CZephyrConfig config = new CZephyrConfig();
 
-    config.comment("Lingua Franca Zephyr configuration file")
-          .comment("This is a generated file, do not edit.")
-          .blank()
-          .property("CONFIG_PRINTK", "y");
-    
+    config
+        .comment("Lingua Franca Zephyr configuration file")
+        .comment("This is a generated file, do not edit.")
+        .blank()
+        .property("CONFIG_PRINTK", "y");
+
     if (isFederated) {
       // For federated programs, we need to use picolib because newlib does not support
       // regex funcitonality.
       config.property("CONFIG_PICOLIBC", "y");
-      
-      config.heading("POSIX sockets and networking")
-            .property("CONFIG_NETWORKING", "y")
-            .property("CONFIG_NET_IPV4", "y")
-            .property("CONFIG_NET_TCP", "y")
-            .property("CONFIG_NET_SOCKETS", "y")
-            .property("CONFIG_NET_SOCKETS_POSIX_NAMES", "y")
-            .property("CONFIG_POSIX_API", "y");
+
+      config
+          .heading("POSIX sockets and networking")
+          .property("CONFIG_NETWORKING", "y")
+          .property("CONFIG_NET_IPV4", "y")
+          .property("CONFIG_NET_TCP", "y")
+          .property("CONFIG_NET_SOCKETS", "y")
+          .property("CONFIG_NET_SOCKETS_POSIX_NAMES", "y")
+          .property("CONFIG_POSIX_API", "y");
     } else {
-      config.property("CONFIG_NEWLIB_LIBC", "y")
-            .property("CONFIG_NEWLIB_LIBC_FLOAT_PRINTF", "y")
-            .property("CONFIG_MAIN_STACK_SIZE", "2048");
+      config
+          .property("CONFIG_NEWLIB_LIBC", "y")
+          .property("CONFIG_NEWLIB_LIBC_FLOAT_PRINTF", "y")
+          .property("CONFIG_MAIN_STACK_SIZE", "2048");
     }
-          
+
     config.property("CONFIG_THREAD_CUSTOM_DATA", "y");
 
     if (useSystemView) {
-      config.heading("SEGGER SystemView support")
-            .property("CONFIG_SEGGER_SYSTEMVIEW", "y")
-            .property("CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
-            .property("CONFIG_SEGGER_SYSVIEW_RTT_CHANNEL", "1")
-            .property("CONFIG_SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
-            .property("CONFIG_USE_SEGGER_RTT", "y")
-            .property("CONFIG_TRACING", "y")
-            .property("CONFIG_THREAD_NAME", "y")
-            .property("CONFIG_SCHED_THREAD_USAGE", "y");
+      config
+          .heading("SEGGER SystemView support")
+          .property("CONFIG_SEGGER_SYSTEMVIEW", "y")
+          .property("CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
+          .property("CONFIG_SEGGER_SYSVIEW_RTT_CHANNEL", "1")
+          .property("CONFIG_SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
+          .property("CONFIG_USE_SEGGER_RTT", "y")
+          .property("CONFIG_TRACING", "y")
+          .property("CONFIG_THREAD_NAME", "y")
+          .property("CONFIG_SCHED_THREAD_USAGE", "y");
     }
 
     Path finalDest = destDir.resolve("prj_lf.conf");
