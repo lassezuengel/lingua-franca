@@ -868,12 +868,15 @@ public class ToLf extends LfSwitch<MalleableString> {
   @Override
   public MalleableString caseKeyValuePairs(KeyValuePairs object) {
     // {KeyValuePairs} '{' (pairs+=KeyValuePair (',' (pairs+=KeyValuePair))* ','?)? '}'
-    if (object.getPairs().isEmpty()) {
+    var nonNullPairs = object.getPairs().stream().filter(kvp -> kvp.getValue() != null).toList();
+
+    if (nonNullPairs.isEmpty()) {
       return MalleableString.anyOf("");
     }
+
     return new Builder()
         .append("{\n")
-        .append(list(",\n", "", "\n", true, true, false, object.getPairs()).indent())
+        .append(list(",\n", "", "\n", true, true, false, nonNullPairs).indent())
         .append("}")
         .get();
   }
@@ -914,14 +917,12 @@ public class ToLf extends LfSwitch<MalleableString> {
 
   @Override
   public MalleableString caseKeyValuePair(KeyValuePair object) {
-    var val = object.getValue();
     // name=Kebab ':' value=Element
-
-    if (val != null) {
-      return new Builder().append(object.getName()).append(": ").append(doSwitch(val)).get();
-    }
-
-    return MalleableString.anyOf("");
+    return new Builder()
+        .append(object.getName())
+        .append(": ")
+        .append(doSwitch(object.getValue()))
+        .get();
   }
 
   @Override
