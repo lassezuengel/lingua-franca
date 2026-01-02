@@ -967,41 +967,77 @@ public class CGenerator extends GeneratorBase {
         .comment("Lingua Franca Zephyr configuration file")
         .comment("This is a generated file, do not edit.")
         .blank()
-        .property("CONFIG_PRINTK", "y");
+        .property("PRINTK", "y");
 
     if (isFederated) {
-      // For federated programs, we need to use picolib because newlib does not support
-      // regex funcitonality.
-      config.property("CONFIG_PICOLIBC", "y");
+      // For federated programs, we need to use picolib,
+      // because newlib does not support regex functionality.
+      config.property("PICOLIBC", "y");
 
       config
           .heading("POSIX sockets and networking")
-          .property("CONFIG_NETWORKING", "y")
-          .property("CONFIG_NET_IPV4", "y")
-          .property("CONFIG_NET_TCP", "y")
-          .property("CONFIG_NET_SOCKETS", "y")
-          .property("CONFIG_NET_SOCKETS_POSIX_NAMES", "y")
-          .property("CONFIG_POSIX_API", "y");
+          .property("NETWORKING", "y")
+          .property("NET_IPV6", "y")
+          .property("NET_TCP", "y")
+          .property("NET_SOCKETS", "y")
+          .property("POSIX_API", "y")
+          .property("NET_SOCKETS_POSIX_NAMES", "y")
+          .heading("Network buffers")
+          .property("NET_PKT_RX_COUNT", "16")
+          .property("NET_PKT_TX_COUNT", "16")
+          .property("NET_BUF_RX_COUNT", "64")
+          .property("NET_BUF_TX_COUNT", "64")
+          .property("NET_CONTEXT_NET_PKT_POOL", "y")
+          .heading("IP address options")
+          .property("NET_IF_UNICAST_IPV6_ADDR_COUNT", "3")
+          .property("NET_IF_MCAST_IPV6_ADDR_COUNT", "4")
+          .property("NET_MAX_CONTEXTS", "10")
+          .heading("Network shell")
+          .property("NET_SHELL", "y")
+          .property("SHELL", "y")
+          .heading("Network application options and configs")
+          .property("NET_CONFIG_SETTINGS", "y")
+          .property("NET_CONFIG_NEED_IPV4", "n")
+          .property("NET_CONFIG_NEED_IPV6", "y")
+          .property(
+              "NET_CONFIG_MY_IPV6_ADDR",
+              "\"48:1516:2342::2\"") // TODO: Unique address per federate!
+          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"2001:db8::2\"") // TODO: RTI address?
+          .property("ZVFS_OPEN_MAX", "12") // TODO: Figure out a better value!
+          .property(
+              "NET_IF_MAX_IPV6_COUNT", "3") // TODO: This depends on the amount of p2p connections!
+          .heading("IEEE802.15.4 6loWPAN")
+          .property("BT", "n")
+          .property("NET_UDP", "n")
+          .property("NET_IPV4", "n")
+          .property("NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE", "8")
+          .property("NET_CONFIG_MY_IPV4_ADDR", "\"\"")
+          .property("NET_CONFIG_PEER_IPV4_ADDR", "\"\"")
+          .property("NET_L2_IEEE802154", "y")
+          .property("NET_L2_IEEE802154_SHELL", "y")
+          .property("NET_CONFIG_IEEE802154_CHANNEL", "26")
+          .property("SYSTEM_WORKQUEUE_STACK_SIZE", "2048");
+
     } else {
       config
-          .property("CONFIG_NEWLIB_LIBC", "y")
-          .property("CONFIG_NEWLIB_LIBC_FLOAT_PRINTF", "y")
-          .property("CONFIG_MAIN_STACK_SIZE", "2048");
+          .property("NEWLIB_LIBC", "y")
+          .property("NEWLIB_LIBC_FLOAT_PRINTF", "y")
+          .property("MAIN_STACK_SIZE", "2048");
     }
 
-    config.property("CONFIG_THREAD_CUSTOM_DATA", "y");
+    config.property("THREAD_CUSTOM_DATA", "y");
 
     if (useSystemView) {
       config
           .heading("SEGGER SystemView support")
-          .property("CONFIG_SEGGER_SYSTEMVIEW", "y")
-          .property("CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
-          .property("CONFIG_SEGGER_SYSVIEW_RTT_CHANNEL", "1")
-          .property("CONFIG_SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
-          .property("CONFIG_USE_SEGGER_RTT", "y")
-          .property("CONFIG_TRACING", "y")
-          .property("CONFIG_THREAD_NAME", "y")
-          .property("CONFIG_SCHED_THREAD_USAGE", "y");
+          .property("SEGGER_SYSTEMVIEW", "y")
+          .property("SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
+          .property("SEGGER_SYSVIEW_RTT_CHANNEL", "1")
+          .property("SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
+          .property("USE_SEGGER_RTT", "y")
+          .property("TRACING", "y")
+          .property("THREAD_NAME", "y")
+          .property("SCHED_THREAD_USAGE", "y");
     }
 
     Path finalDest = destDir.resolve("prj_lf.conf");

@@ -67,7 +67,7 @@ public class CZephyrConfig {
       } else if (e instanceof BlankLine) {
         sb.append("\n");
       } else if (e instanceof PropertyAssignment p) {
-        sb.append(p.key()).append("=").append(p.value()).append("\n");
+        sb.append("CONFIG_").append(p.key()).append("=").append(p.value()).append("\n");
       }
     }
 

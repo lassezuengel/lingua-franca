@@ -1250,13 +1250,11 @@ public class CReactionGenerator {
     // Use the function name in the instrumentation calls, for unique IDs and recognizable names.
     //
     // HACK: This code naively extracts function name from header. Not nice because it assumes a
-    // certain format,
-    //       and because the function name was already calculated at some point, there really is no
-    // reason
-    //       to do this again here. The function header should just be an abstract data type that
-    //       exposes the function name as well as the header, or we should pass the function name as
-    // a
-    //       separate argument.
+    // certain format, and because the function name was already calculated at some point, there
+    // really is no reason to do this again here. The function header should just be an abstract
+    // data type that exposes the function name as well as the header, or we should pass the
+    // function
+    // name as a separate argument.
     var functionName = header.substring(5, header.indexOf('(')).trim();
     var generateInstrumentation =
         targetConfig.getOrDefault(SystemViewProperty.INSTANCE)
