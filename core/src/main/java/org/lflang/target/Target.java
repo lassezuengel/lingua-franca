@@ -557,6 +557,7 @@ public enum Target {
               DNETProperty.INSTANCE,
               DockerProperty.INSTANCE,
               FilesProperty.INSTANCE,
+              IPvProperty.INSTANCE,
               KeepaliveProperty.INSTANCE,
               NoSourceMappingProperty.INSTANCE,
               PlatformProperty.INSTANCE,

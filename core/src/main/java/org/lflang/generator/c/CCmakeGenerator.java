@@ -15,6 +15,7 @@ import org.lflang.target.property.CmakeIncludeProperty;
 import org.lflang.target.property.CmakeInitIncludeProperty;
 import org.lflang.target.property.CompileDefinitionsProperty;
 import org.lflang.target.property.CompilerProperty;
+import org.lflang.target.property.IPvProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.PlatformProperty.Option;
 import org.lflang.target.property.ProtobufsProperty;
@@ -316,6 +317,10 @@ public class CCmakeGenerator {
 
     boolean useSystemView =
         targetConfig.getOrDefault(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
+
+    var useIpv6 = IPvProperty.useIPv6(targetConfig);
+
+    cMakeCode.pr("add_compile_definitions(USE_IPV6=" + (useIpv6 ? "1" : "0") + ")");
 
     // Setup main target for different platforms
     switch (platformOptions.platform()) {

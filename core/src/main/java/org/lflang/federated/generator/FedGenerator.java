@@ -62,6 +62,7 @@ import org.lflang.target.TargetConfig;
 import org.lflang.target.property.AuthProperty;
 import org.lflang.target.property.CoordinationProperty;
 import org.lflang.target.property.DockerProperty;
+import org.lflang.target.property.IPvProperty;
 import org.lflang.target.property.DockerProperty.DockerOptions;
 import org.lflang.target.property.KeepaliveProperty;
 import org.lflang.target.property.LoggingProperty;
@@ -248,11 +249,17 @@ public class FedGenerator {
     Path rtiSrcPath = fileConfig.getRtiSrcGenPath().resolve("core/federated/RTI");
     String cores = String.valueOf(Runtime.getRuntime().availableProcessors());
 
+    var useIpv6 = IPvProperty.useIPv6(context.getTargetConfig());
+
     var clean = LFCommand.get("rm", List.of("-rf", "build"), false, fileConfig.getRtiSrcGenPath());
     var configure =
         LFCommand.get(
             "cmake",
-            List.of("-Bbuild", "-DCMAKE_INSTALL_PREFIX=" + fileConfig.getGenPath(), "."),
+            List.of(
+                "-Bbuild",
+                "-DLF_RTI_USE_IPV6=" + (useIpv6 ? "ON" : "OFF"),
+                "-DCMAKE_INSTALL_PREFIX=" + fileConfig.getGenPath(),
+                "."),
             false,
             fileConfig.getRtiSrcGenPath());
     var build =

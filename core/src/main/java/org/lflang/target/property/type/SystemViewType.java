@@ -3,12 +3,11 @@ package org.lflang.target.property.type;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 
 /**
  * Type for Segger SystemView technology settings.
  */
-public class SystemViewType extends OptionsType<SystemViewSetting> {
+public class SystemViewType extends OptionsType<SystemViewType.SystemViewSetting> {
 
   @Override
   protected Class<SystemViewSetting> enumClass() {
