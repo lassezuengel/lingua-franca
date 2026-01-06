@@ -5,6 +5,7 @@ import java.util.List;
 import org.lflang.generator.CodeBuilder;
 import org.lflang.target.TargetConfig;
 import org.lflang.target.property.FastProperty;
+import org.lflang.target.property.FedSetupProperty;
 import org.lflang.target.property.KeepaliveProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.TimeOutProperty;
@@ -74,6 +75,21 @@ public class CMainFunctionGenerator {
       case ZEPHYR -> {
         // The Zephyr "runtime" does not terminate when main returns.
         //  Rather, `exit` should be called explicitly.
+
+        // Check if federated setup is required (automatic connection management):
+        if (targetConfig.isSet(FedSetupProperty.INSTANCE)) {
+          return String.join(
+            "\n",
+            "int main(void) {",
+            "   lf_init_connection_manager();",
+            "   lf_wait_for_network_connection();\n",
+            "   int res = lf_reactor_c_main(0, NULL);",
+            "   exit(res);",
+            "   return 0;",
+            "}");
+        }
+
+        // Normal Zephyr main function:
         return String.join(
             "\n",
             "int main(void) {",
