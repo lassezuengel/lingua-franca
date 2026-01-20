@@ -947,11 +947,7 @@ public class CGenerator extends GeneratorBase {
   private void generateZephyrProjectConfig() {
     Path destDir = fileConfig.getSrcGenPath();
 
-    // TODO: `targetConfig.isFederated()` does not work here because for zephyr federate builds,
-    //       only the main LFC run is federated, and this is would be a recursive run for one
-    //       of the federates, which is not a distributed program itself.
-    //       How can we check if the main program is federated here?
-    var isFederated = destDir.toString().contains("/fed-gen/");
+    var isFederated = targetConfig.isSet(FedSetupProperty.INSTANCE);
     var useSystemView =
         targetConfig.getOrDefault(SystemViewProperty.INSTANCE) != SystemViewSetting.NONE;
 
