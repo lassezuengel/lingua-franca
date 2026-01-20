@@ -1,0 +1,30 @@
+target C {
+  platform: "Zephyr",
+  single-threaded: true,
+  coordination: centralized
+}
+
+reactor A {
+  timer t(0, 1000ms)
+  state counter: int = 0
+  output out: int
+
+  reaction(t) -> out {=
+    self->counter++;
+    lf_set(out, self->counter);
+  =}
+}
+
+reactor B {
+  input in: int
+
+  reaction(in) {=
+    printf("Received value: %d\n", lf_get(in));
+  =}
+}
+
+main reactor {
+  a = new A()
+  b = new B()
+  a.out -> b.in
+}
