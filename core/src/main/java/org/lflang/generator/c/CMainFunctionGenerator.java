@@ -81,6 +81,7 @@ public class CMainFunctionGenerator {
           return String.join(
             "\n",
             "int main(void) {",
+            "   lf_print(\"Starting federated execution.\\n\");",
             "   lf_init_connection_manager();",
             "   lf_wait_for_network_connection();\n",
             "   int res = lf_reactor_c_main(0, NULL);",

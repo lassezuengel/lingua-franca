@@ -39,6 +39,7 @@ import org.lflang.lf.Timer;
 import org.lflang.lf.TriggerRef;
 import org.lflang.lf.VarRef;
 import org.lflang.target.TargetConfig;
+import org.lflang.target.property.FedSetupProperty;
 
 /**
  * Class that represents an instance of a federate, i.e., a reactor that is instantiated at the top
@@ -71,6 +72,7 @@ public class FederateInstance {
     this.bankWidth = bankWidth;
     this.messageReporter = messageReporter;
     this.targetConfig = targetConfig;
+    this.host = (true || targetConfig.isSet(FedSetupProperty.INSTANCE)) ? "fd01::1" : "localhost";
 
     // If the instantiation is in a bank, then we have to append
     // the bank index to the name.
@@ -94,7 +96,7 @@ public class FederateInstance {
   public int bankWidth;
 
   /** The host, if specified using the 'at' keyword. */
-  public String host = "localhost";
+  public String host;
 
   /** The instantiation of the top-level reactor, or null if there is no federation. */
   public Instantiation instantiation;

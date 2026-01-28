@@ -83,6 +83,7 @@ import org.lflang.target.property.SingleThreadedProperty;
 import org.lflang.target.property.SystemViewProperty;
 import org.lflang.target.property.TracingProperty;
 import org.lflang.target.property.WorkersProperty;
+import org.lflang.target.property.type.LoggingType.LogLevel;
 import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.ArduinoUtil;
@@ -944,6 +945,10 @@ public class CGenerator extends GeneratorBase {
     }
   }
 
+  /**
+   * Generate the Zephyr project configuration file, setting relevant
+   * Kconfig options based on the target properties.
+   */
   private void generateZephyrProjectConfig() {
     Path destDir = fileConfig.getSrcGenPath();
 
@@ -963,12 +968,25 @@ public class CGenerator extends GeneratorBase {
         .comment("Lingua Franca Zephyr configuration file")
         .comment("This is a generated file, do not edit.")
         .blank()
-        .property("PRINTK", "y");
+        .property("PRINTK", "y")
+        .property("USE_SEGGER_RTT", "y")
+        .property("RTT_CONSOLE", "y")
+        .property("UART_CONSOLE", "n")
+        .property("NET_LOG", "n") // TODO: This should be y if we want to see networking logs
+        .property("LOG", "y");
 
     if (isFederated) {
       // For federated programs, we need to use picolib,
       // because newlib does not support regex functionality.
       config.property("PICOLIBC", "y");
+
+      // TODO: Make sure that these addresses are unique per federate.
+      // This is a temporary solution until we have a better way
+      // of assigning addresses.
+      var fedId = destDir.toString().contains("__p") ? "42" : "21";
+
+      var isLoggingEnabled =
+          !targetConfig.getOrDefault(LoggingProperty.INSTANCE).equals(LogLevel.getDefault());
 
       config
           .heading("POSIX sockets and networking")
@@ -976,6 +994,7 @@ public class CGenerator extends GeneratorBase {
           .property("NET_IPV6", "y")
           .property("NET_TCP", "y")
           .property("NET_SOCKETS", "y")
+          .property("NET_CONNECTION_MANAGER", "y")
           .property("POSIX_API", "y")
           .property("NET_SOCKETS_POSIX_NAMES", "y")
           .heading("Network buffers")
@@ -997,22 +1016,27 @@ public class CGenerator extends GeneratorBase {
           .property("NET_CONFIG_NEED_IPV6", "y")
           .property(
               "NET_CONFIG_MY_IPV6_ADDR",
-              "\"48:1516:2342::2\"") // TODO: Unique address per federate!
-          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"2001:db8::2\"") // TODO: RTI address?
+              "\"fd01::" + fedId + "\"")
+          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"") // TODO: RTI address?
           .property("ZVFS_OPEN_MAX", "12") // TODO: Figure out a better value!
           .property(
               "NET_IF_MAX_IPV6_COUNT", "3") // TODO: This depends on the amount of p2p connections!
           .heading("IEEE802.15.4 6loWPAN")
           .property("BT", "n")
-          .property("NET_UDP", "n")
+          .property("NET_UDP", "y")
           .property("NET_IPV4", "n")
           .property("NET_L2_IEEE802154_FRAGMENT_REASS_CACHE_SIZE", "8")
           .property("NET_CONFIG_MY_IPV4_ADDR", "\"\"")
           .property("NET_CONFIG_PEER_IPV4_ADDR", "\"\"")
           .property("NET_L2_IEEE802154", "y")
           .property("NET_L2_IEEE802154_SHELL", "y")
+          .property("NET_IPV6_ND", "n")
+          .property("NET_IPV6_NBR_CACHE", "n")
           .property("NET_CONFIG_IEEE802154_CHANNEL", "26")
-          .property("SYSTEM_WORKQUEUE_STACK_SIZE", "2048");
+          .heading("Additional system configuration")
+          // .property("LOG_MODE_IMMEDIATE", isLoggingEnabled ? "y" : "n")
+          .property("SYSTEM_WORKQUEUE_STACK_SIZE", "4096")
+          .property("MAIN_STACK_SIZE", "8192");
 
     } else {
       config
@@ -1030,7 +1054,6 @@ public class CGenerator extends GeneratorBase {
           .property("SEGGER_SYSTEMVIEW_BOOT_ENABLE", "y")
           .property("SEGGER_SYSVIEW_RTT_CHANNEL", "1")
           .property("SEGGER_SYSVIEW_RTT_BUFFER_SIZE", "32192")
-          .property("USE_SEGGER_RTT", "y")
           .property("TRACING", "y")
           .property("THREAD_NAME", "y")
           .property("SCHED_THREAD_USAGE", "y");

@@ -93,7 +93,7 @@ public class FedGenerator {
   private final FederationFileConfig fileConfig;
 
   /** Configuration of the RTI. */
-  final RtiConfig rtiConfig = new RtiConfig();
+  final RtiConfig rtiConfig;
 
   /**
    * Target configuration of the federation; drawn from the file in which the federated reactor is
@@ -121,6 +121,7 @@ public class FedGenerator {
     this.fileConfig = (FederationFileConfig) context.getFileConfig();
     this.targetConfig = context.getTargetConfig();
     this.messageReporter = context.getErrorReporter();
+    this.rtiConfig = new RtiConfig(this.targetConfig);
   }
 
   /**
@@ -736,7 +737,8 @@ public class FedGenerator {
          */
         if (federateInstance.host != null
             && !federateInstance.host.equals("localhost")
-            && !federateInstance.host.equals("0.0.0.0")) {
+            && !federateInstance.host.equals("0.0.0.0")
+            && !federateInstance.host.equals("fd01::1")) {
           federateInstance.isRemote = true;
         }
       }

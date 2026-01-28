@@ -2,6 +2,8 @@ package org.lflang.federated.launcher;
 
 import java.nio.file.Path;
 import org.lflang.FileConfig;
+import org.lflang.target.TargetConfig;
+import org.lflang.target.property.FedSetupProperty;
 
 /**
  * Class for storing configuration settings pertaining to the RTI.
@@ -23,9 +25,9 @@ public class RtiConfig {
   private String user;
 
   /** Construct a new RTI configuration with all options set to their defaults. */
-  public RtiConfig() {
+  public RtiConfig(TargetConfig targetConfig) {
     this.directory = Path.of("LinguaFrancaRemote");
-    this.host = "localhost";
+    this.host = (true || targetConfig.isSet(FedSetupProperty.INSTANCE)) ? "fd01::1" : "localhost"; // TODO: This is just hardcoded for testing, should've never been committed.
     this.port = 0;
   }
 
