@@ -14,6 +14,9 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -286,6 +289,12 @@ public class CGenerator extends GeneratorBase {
   //// Private fields
   /** Extra lines that need to go into the generated CMakeLists.txt. */
   private final String cMakeExtras = "";
+
+  /**
+   * Counter for the number of zephyr federates processed,
+   * used for unique identification of zephyr federates.
+   */
+  private static int zephyrFedCounter = 0;
 
   /** Place to collect code to execute at the start of a time step. */
   private final CodeBuilder startTimeStep = new CodeBuilder();
@@ -972,7 +981,7 @@ public class CGenerator extends GeneratorBase {
         .property("USE_SEGGER_RTT", "y")
         .property("RTT_CONSOLE", "y")
         .property("UART_CONSOLE", "n")
-        .property("NET_LOG", "n") // TODO: This should be y if we want to see networking logs
+        .property("NET_LOG", "n")
         .property("LOG", "y");
 
     if (isFederated) {
@@ -980,13 +989,22 @@ public class CGenerator extends GeneratorBase {
       // because newlib does not support regex functionality.
       config.property("PICOLIBC", "y");
 
-      // TODO: Make sure that these addresses are unique per federate.
-      // This is a temporary solution until we have a better way
-      // of assigning addresses.
-      var fedId = destDir.toString().contains("__p") ? "42" : "21";
+      var fedId = zephyrFedCounter++;
+      // Generate unique IPv6 address based on federate ID.
+      // Start at 2 to avoid conflict with RTI at suffix ::1.
+      String fedIpV6 = "";
+      try {
+        fedIpV6 = fromInt(fedId + 2);
+      } catch (UnknownHostException e) {
+        messageReporter
+            .nowhere()
+            .error("Failed to generate IPv6 address for federate #" + fedId);
+      }
 
-      var isLoggingEnabled =
-          !targetConfig.getOrDefault(LoggingProperty.INSTANCE).equals(LogLevel.getDefault());
+      messageReporter
+          .nowhere()
+          .info("Generating Zephyr config for federate #" + fedId
+              + " with IPv6 address " + fedIpV6);
 
       config
           .heading("POSIX sockets and networking")
@@ -1016,12 +1034,12 @@ public class CGenerator extends GeneratorBase {
           .property("NET_CONFIG_NEED_IPV6", "y")
           .property(
               "NET_CONFIG_MY_IPV6_ADDR",
-              "\"fd01::" + fedId + "\"")
-          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"") // TODO: RTI address?
+              "\"" + fedIpV6 + "\"")
+          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"") // TODO: Make RTI address configurable?
           .property("ZVFS_OPEN_MAX", "12") // TODO: Figure out a better value!
           .property(
               "NET_IF_MAX_IPV6_COUNT", "3") // TODO: This depends on the amount of p2p connections!
-          .heading("IEEE802.15.4 6loWPAN")
+          .heading("IEEE802.15.4 6LoWPAN")
           .property("BT", "n")
           .property("NET_UDP", "y")
           .property("NET_IPV4", "n")
@@ -1034,7 +1052,6 @@ public class CGenerator extends GeneratorBase {
           .property("NET_IPV6_NBR_CACHE", "n")
           .property("NET_CONFIG_IEEE802154_CHANNEL", "26")
           .heading("Additional system configuration")
-          // .property("LOG_MODE_IMMEDIATE", isLoggingEnabled ? "y" : "n")
           .property("SYSTEM_WORKQUEUE_STACK_SIZE", "4096")
           .property("MAIN_STACK_SIZE", "8192");
 
@@ -1070,6 +1087,33 @@ public class CGenerator extends GeneratorBase {
           .error("Failed to write Zephyr project configuration file to " + finalDest);
     }
   }
+
+  /**
+   * Generates an IPv6 address string from a 48-bit integer by embedding it in the
+   * fd01::/48 unique local address space.
+   * @param value A 48-bit integer value to be converted to an IPv6 address.
+   * @return A string representation of the IPv6 address.
+   * @throws UnknownHostException
+   */
+  public static String fromInt(long value) throws UnknownHostException {
+        if (value < 0 || value >= (1L << 48)) {
+            throw new IllegalArgumentException("Value must fit in 48 bits");
+        }
+
+        byte[] addr = new byte[16];
+
+        // Prefix: fd01::
+        addr[0] = (byte) 0xfd;
+        addr[1] = (byte) 0x01;
+
+        // Put the 48-bit integer into the last 6 bytes
+        for (int i = 0; i < 6; i++) {
+            addr[15 - i] = (byte) (value & 0xff);
+            value >>= 8;
+        }
+
+        return ((Inet6Address) InetAddress.getByAddress(addr)).getHostAddress();
+    }
 
   ////////////////////////////////////////////
   //// Code generators.
