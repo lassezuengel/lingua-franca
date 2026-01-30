@@ -79,15 +79,15 @@ public class CMainFunctionGenerator {
         // Check if federated setup is required (automatic connection management):
         if (targetConfig.isSet(FedSetupProperty.INSTANCE)) {
           return String.join(
-            "\n",
-            "int main(void) {",
-            "   lf_print(\"Starting federated execution.\\n\");",
-            "   lf_init_connection_manager();",
-            "   lf_wait_for_network_connection();\n",
-            "   int res = lf_reactor_c_main(0, NULL);",
-            "   exit(res);",
-            "   return 0;",
-            "}");
+              "\n",
+              "int main(void) {",
+              "   lf_print(\"Starting federated execution.\\n\");",
+              "   lf_init_connection_manager();",
+              "   lf_wait_for_network_connection();\n",
+              "   int res = lf_reactor_c_main(0, NULL);",
+              "   exit(res);",
+              "   return 0;",
+              "}");
         }
 
         // Normal Zephyr main function:

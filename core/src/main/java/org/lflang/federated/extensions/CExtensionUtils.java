@@ -31,7 +31,9 @@ import org.lflang.target.property.CmakeIncludeProperty;
 import org.lflang.target.property.CompileDefinitionsProperty;
 import org.lflang.target.property.CoordinationOptionsProperty;
 import org.lflang.target.property.CoordinationProperty;
+import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.type.ClockSyncModeType.ClockSyncMode;
+import org.lflang.target.property.type.PlatformType.Platform;
 
 /**
  * Utility class for the C extension.
@@ -202,6 +204,20 @@ public class CExtensionUtils {
       definitions.put("FEDERATED_AUTHENTICATED", "");
     }
     definitions.put("NUMBER_OF_FEDERATES", String.valueOf(federateNames.size()));
+    if (federate
+        .targetConfig
+        .getOrDefault(PlatformProperty.INSTANCE)
+        .platform()
+        .equals(Platform.ZEPHYR)) {
+      // For the zephyr target, we need to know the number of P2P connections at compile time.
+      definitions.put("FEDERATED_ZEPHYR", "1");
+      definitions.put(
+          "FED_INBOUND_P2P_CONNECTIONS", String.valueOf(federate.inboundP2PConnections.size()));
+      definitions.put(
+          "FED_OUTBOUND_P2P_CONNECTIONS", String.valueOf(federate.outboundP2PConnections.size()));
+    } else {
+      definitions.put("wtfgoingon", "1");
+    }
     definitions.put("EXECUTABLE_PREAMBLE", "");
     definitions.put("FEDERATE_ID", String.valueOf(federate.id));
     definitions.put(

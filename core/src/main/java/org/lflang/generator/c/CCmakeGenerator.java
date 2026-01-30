@@ -15,6 +15,7 @@ import org.lflang.target.property.CmakeIncludeProperty;
 import org.lflang.target.property.CmakeInitIncludeProperty;
 import org.lflang.target.property.CompileDefinitionsProperty;
 import org.lflang.target.property.CompilerProperty;
+import org.lflang.target.property.FedSetupProperty;
 import org.lflang.target.property.IPvProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.PlatformProperty.Option;
@@ -325,6 +326,10 @@ public class CCmakeGenerator {
     // Setup main target for different platforms
     switch (platformOptions.platform()) {
       case ZEPHYR:
+        if (targetConfig.isSet(FedSetupProperty.INSTANCE)) {
+          cMakeCode.pr(setUpFederatedZephyr());
+          cMakeCode.newLine();
+        }
         cMakeCode.pr(
             setUpMainTargetZephyr(
                 hasMain,
@@ -580,24 +585,6 @@ public class CCmakeGenerator {
     return code.toString();
   }
 
-  /**
-   * Adds Segger dependencies to Zephyr target.
-   */
-  private static String setUpSeggerDependencies() {
-    var code = new CodeBuilder();
-    code.pr("target_link_libraries(app PRIVATE");
-    code.indent();
-    code.pr("\"-Wl,--start-group\"");
-    code.pr("modules__segger");
-    code.pr("zephyr");
-    code.pr("\"-Wl,--end-group\"");
-    code.unindent();
-    code.pr(")");
-    code.newLine();
-
-    return code.toString();
-  }
-
   private static String setUpMainTargetRp2040(
       boolean hasMain, String executableName, Stream<String> cSources) {
     var code = new CodeBuilder();
@@ -688,5 +675,37 @@ public class CCmakeGenerator {
     code.newLine();
 
     return code.toString();
+  }
+
+  /**
+   * Add Segger dependencies to the Zephyr target.
+   */
+  private static String setUpSeggerDependencies() {
+    var code = new CodeBuilder();
+    code.pr("target_link_libraries(app PRIVATE");
+    code.indent();
+    code.pr("\"-Wl,--start-group\"");
+    code.pr("modules__segger");
+    code.pr("zephyr");
+    code.pr("\"-Wl,--end-group\"");
+    code.unindent();
+    code.pr(")");
+    code.newLine();
+
+    return code.toString();
+  }
+
+  /**
+   * Add compile definitions for federated Zephyr targets.
+   */
+  private static String setUpFederatedZephyr() {
+    return """
+           # Set federated Zephyr compile definitions
+           add_compile_definitions(
+             FEDERATED_ZEPHYR=${FEDERATED_ZEPHYR}
+             FED_INBOUND_P2P_CONNECTIONS=${FED_INBOUND_P2P_CONNECTIONS}
+             FED_OUTBOUND_P2P_CONNECTIONS=${FED_OUTBOUND_P2P_CONNECTIONS}
+           )
+           """;
   }
 }

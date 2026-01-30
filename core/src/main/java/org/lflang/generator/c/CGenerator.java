@@ -86,7 +86,6 @@ import org.lflang.target.property.SingleThreadedProperty;
 import org.lflang.target.property.SystemViewProperty;
 import org.lflang.target.property.TracingProperty;
 import org.lflang.target.property.WorkersProperty;
-import org.lflang.target.property.type.LoggingType.LogLevel;
 import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.SystemViewType.SystemViewSetting;
 import org.lflang.util.ArduinoUtil;
@@ -996,15 +995,13 @@ public class CGenerator extends GeneratorBase {
       try {
         fedIpV6 = fromInt(fedId + 2);
       } catch (UnknownHostException e) {
-        messageReporter
-            .nowhere()
-            .error("Failed to generate IPv6 address for federate #" + fedId);
+        messageReporter.nowhere().error("Failed to generate IPv6 address for federate #" + fedId);
       }
 
       messageReporter
           .nowhere()
-          .info("Generating Zephyr config for federate #" + fedId
-              + " with IPv6 address " + fedIpV6);
+          .info(
+              "Generating Zephyr config for federate #" + fedId + " with IPv6 address " + fedIpV6);
 
       config
           .heading("POSIX sockets and networking")
@@ -1032,13 +1029,13 @@ public class CGenerator extends GeneratorBase {
           .property("NET_CONFIG_SETTINGS", "y")
           .property("NET_CONFIG_NEED_IPV4", "n")
           .property("NET_CONFIG_NEED_IPV6", "y")
-          .property(
-              "NET_CONFIG_MY_IPV6_ADDR",
-              "\"" + fedIpV6 + "\"")
-          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"") // TODO: Make RTI address configurable?
-          .property("ZVFS_OPEN_MAX", "12") // TODO: Figure out a better value!
-          .property(
-              "NET_IF_MAX_IPV6_COUNT", "3") // TODO: This depends on the amount of p2p connections!
+          .property("NET_CONFIG_MY_IPV6_ADDR", "\"" + fedIpV6 + "\"")
+          // TODO: Make RTI address configurable or choose a better default.
+          .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"")
+          // TODO: This value should depend on the amount of p2p connections
+          // (specifies the max allowed amount of open file descriptors).
+          .property("ZVFS_OPEN_MAX", "16")
+          .property("NET_IF_MAX_IPV6_COUNT", "2")
           .heading("IEEE802.15.4 6LoWPAN")
           .property("BT", "n")
           .property("NET_UDP", "y")
@@ -1096,24 +1093,24 @@ public class CGenerator extends GeneratorBase {
    * @throws UnknownHostException
    */
   public static String fromInt(long value) throws UnknownHostException {
-        if (value < 0 || value >= (1L << 48)) {
-            throw new IllegalArgumentException("Value must fit in 48 bits");
-        }
-
-        byte[] addr = new byte[16];
-
-        // Prefix: fd01::
-        addr[0] = (byte) 0xfd;
-        addr[1] = (byte) 0x01;
-
-        // Put the 48-bit integer into the last 6 bytes
-        for (int i = 0; i < 6; i++) {
-            addr[15 - i] = (byte) (value & 0xff);
-            value >>= 8;
-        }
-
-        return ((Inet6Address) InetAddress.getByAddress(addr)).getHostAddress();
+    if (value < 0 || value >= (1L << 48)) {
+      throw new IllegalArgumentException("Value must fit in 48 bits");
     }
+
+    byte[] addr = new byte[16];
+
+    // Prefix: fd01::
+    addr[0] = (byte) 0xfd;
+    addr[1] = (byte) 0x01;
+
+    // Put the 48-bit integer into the last 6 bytes
+    for (int i = 0; i < 6; i++) {
+      addr[15 - i] = (byte) (value & 0xff);
+      value >>= 8;
+    }
+
+    return ((Inet6Address) InetAddress.getByAddress(addr)).getHostAddress();
+  }
 
   ////////////////////////////////////////////
   //// Code generators.

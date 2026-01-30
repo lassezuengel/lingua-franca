@@ -39,7 +39,8 @@ import org.lflang.lf.Timer;
 import org.lflang.lf.TriggerRef;
 import org.lflang.lf.VarRef;
 import org.lflang.target.TargetConfig;
-import org.lflang.target.property.FedSetupProperty;
+import org.lflang.target.property.PlatformProperty;
+import org.lflang.target.property.type.PlatformType.Platform;
 
 /**
  * Class that represents an instance of a federate, i.e., a reactor that is instantiated at the top
@@ -72,7 +73,10 @@ public class FederateInstance {
     this.bankWidth = bankWidth;
     this.messageReporter = messageReporter;
     this.targetConfig = targetConfig;
-    this.host = (true || targetConfig.isSet(FedSetupProperty.INSTANCE)) ? "fd01::1" : "localhost";
+    this.host =
+        targetConfig.getOrDefault(PlatformProperty.INSTANCE).platform().equals(Platform.ZEPHYR)
+            ? "fd01::1"
+            : "localhost";
 
     // If the instantiation is in a bank, then we have to append
     // the bank index to the name.

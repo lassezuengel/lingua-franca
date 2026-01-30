@@ -104,7 +104,7 @@ public class FedLauncherGenerator {
     shCode.append("#### Host is ").append(host).append("\n");
 
     // Launch the RTI in the foreground.
-    if (host.equals("localhost") || host.equals("0.0.0.0") || host.equals("fd01::1")) {
+    if (host.equals("localhost") || host.equals("0.0.0.0")) {
       // FIXME: the paths below will not work on Windows
       shCode
           .append(
@@ -172,7 +172,7 @@ public class FedLauncherGenerator {
             .append("\n");
       }
     }
-    if (host.equals("localhost") || host.equals("0.0.0.0") || host.equals("fd01::1")) {
+    if (host.equals("localhost") || host.equals("0.0.0.0")) {
       // Local PID managements
       shCode.append(
           "echo \"#### Bringing the RTI back to foreground so it can receive Control-C.\"" + "\n");

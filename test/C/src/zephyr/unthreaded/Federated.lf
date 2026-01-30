@@ -5,7 +5,7 @@ target C {
 }
 
 reactor A {
-  timer t(0, 1000ms)
+  timer t(0, 1000 ms)
   state counter: int = 0
   output out: int
 

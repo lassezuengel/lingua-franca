@@ -5,8 +5,8 @@ import org.lflang.ast.ASTUtils;
 import org.lflang.lf.Element;
 import org.lflang.lf.LfPackage.Literals;
 import org.lflang.target.TargetConfig;
-import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.target.property.type.IPvType;
+import org.lflang.target.property.type.PlatformType.Platform;
 
 /**
  * Directive to specify the used IP version for federate as well as RTI communication.
@@ -80,7 +80,7 @@ public final class IPvProperty extends TargetProperty<IPvType.IPvSetting, IPvTyp
   /**
    * Determine whether IPv6 is used based on the given target configuration.
    * @param config The target configuration.
-   * @return True if IPv6 is selectted (or preferred in case of `auto`), false if IPv4 is used.
+   * @return True if IPv6 is selected (or preferred in case of `auto`), false if IPv4 is used.
    */
   public static boolean useIPv6(TargetConfig config) {
     var setting = config.getOrDefault(INSTANCE);

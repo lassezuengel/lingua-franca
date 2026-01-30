@@ -3,7 +3,8 @@ package org.lflang.federated.launcher;
 import java.nio.file.Path;
 import org.lflang.FileConfig;
 import org.lflang.target.TargetConfig;
-import org.lflang.target.property.FedSetupProperty;
+import org.lflang.target.property.PlatformProperty;
+import org.lflang.target.property.type.PlatformType.Platform;
 
 /**
  * Class for storing configuration settings pertaining to the RTI.
@@ -27,7 +28,10 @@ public class RtiConfig {
   /** Construct a new RTI configuration with all options set to their defaults. */
   public RtiConfig(TargetConfig targetConfig) {
     this.directory = Path.of("LinguaFrancaRemote");
-    this.host = (true || targetConfig.isSet(FedSetupProperty.INSTANCE)) ? "fd01::1" : "localhost"; // TODO: This is just hardcoded for testing, should've never been committed.
+    this.host =
+        targetConfig.getOrDefault(PlatformProperty.INSTANCE).platform().equals(Platform.ZEPHYR)
+            ? "fd01::1"
+            : "localhost";
     this.port = 0;
   }
 
