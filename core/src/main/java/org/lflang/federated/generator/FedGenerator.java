@@ -32,6 +32,8 @@ import org.lflang.LFStandaloneSetup;
 import org.lflang.MessageReporter;
 import org.lflang.ast.ASTUtils;
 import org.lflang.federated.launcher.FedLauncherGenerator;
+import org.lflang.federated.launcher.FedLauncherGeneratorShell;
+import org.lflang.federated.launcher.FedLauncherGeneratorZephyr;
 import org.lflang.federated.launcher.RtiConfig;
 import org.lflang.generator.CodeMap;
 import org.lflang.generator.GeneratorArguments;
@@ -69,6 +71,7 @@ import org.lflang.target.property.LoggingProperty;
 import org.lflang.target.property.NoCompileProperty;
 import org.lflang.target.property.PlatformProperty;
 import org.lflang.target.property.type.CoordinationModeType.CoordinationMode;
+import org.lflang.target.property.type.PlatformType.Platform;
 import org.lflang.util.Averager;
 import org.lflang.util.FileUtil;
 import org.lflang.util.LFCommand;
@@ -346,8 +349,28 @@ public class FedGenerator {
   }
 
   private void generateLaunchScript() {
-    new FedLauncherGenerator(this.targetConfig, this.fileConfig, this.messageReporter)
-        .doGenerate(federates, rtiConfig);
+    createLauncherGenerator().doGenerate(federates, rtiConfig);
+  }
+
+  /**
+   * Create the appropriate launcher generator based on the platform.
+   */
+  private FedLauncherGenerator createLauncherGenerator() {
+    return isZephyrPlatform()
+        ? new FedLauncherGeneratorZephyr(targetConfig, fileConfig, messageReporter)
+        : new FedLauncherGeneratorShell(targetConfig, fileConfig, messageReporter);
+  }
+
+  /**
+   * Check if the target platform is Zephyr.
+   * @return true iff the platform is `ZEPHYR`.
+   */
+  private boolean isZephyrPlatform() {
+    return rtiConfig
+        .getTargetConfig()
+        .getOrDefault(PlatformProperty.INSTANCE)
+        .platform()
+        .equals(Platform.ZEPHYR);
   }
 
   /**

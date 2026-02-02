@@ -25,9 +25,13 @@ public class RtiConfig {
   /** The username used to gain access to the host where the RTI is to be spawned. */
   private String user;
 
+  /** The target configuration. */
+  private TargetConfig targetConfig;
+
   /** Construct a new RTI configuration with all options set to their defaults. */
   public RtiConfig(TargetConfig targetConfig) {
     this.directory = Path.of("LinguaFrancaRemote");
+    this.targetConfig = targetConfig;
     this.host =
         targetConfig.getOrDefault(PlatformProperty.INSTANCE).platform().equals(Platform.ZEPHYR)
             ? "fd01::1"
@@ -53,6 +57,11 @@ public class RtiConfig {
   /** Return the username used to gain access to the host where the RTI is to be spawned. */
   public String getUser() {
     return user;
+  }
+
+  /** Return the target configuration. */
+  public TargetConfig getTargetConfig() {
+    return targetConfig;
   }
 
   /** Return the path to the RTI binary on the remote host. */
