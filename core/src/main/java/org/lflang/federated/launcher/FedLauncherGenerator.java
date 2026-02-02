@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,28 +19,17 @@ import org.lflang.target.property.TracingProperty;
 import org.lflang.target.property.type.ClockSyncModeType.ClockSyncMode;
 
 /**
- * Utility class that can be used to create a launcher for federated LF programs.
+ * Utility class that can be used to create a launcher for federated LF programs
+ * for shell-based platforms (e.g., Linux, macOS).
  *
  * @author Edward A. Lee
  * @author Soroush Bateni
  * @ingroup Federated
  */
-public class FedLauncherGenerator {
-  protected TargetConfig targetConfig;
-  protected FederationFileConfig fileConfig;
-  protected MessageReporter messageReporter;
-
-  /**
-   * @param targetConfig The current target configuration.
-   * @param fileConfig The current file configuration.
-   * @param messageReporter A error reporter for reporting any errors or warnings during the code
-   *     generation
-   */
-  public FedLauncherGenerator(
+public class FedLauncherGeneratorShell extends FedLauncherGenerator {
+  public FedLauncherGeneratorShell(
       TargetConfig targetConfig, FederationFileConfig fileConfig, MessageReporter messageReporter) {
-    this.targetConfig = targetConfig;
-    this.fileConfig = fileConfig;
-    this.messageReporter = messageReporter;
+    super(targetConfig, fileConfig, messageReporter);
   }
 
   /**
@@ -75,6 +63,7 @@ public class FedLauncherGenerator {
    * @param federates A list of federate instances in the federation
    * @param rtiConfig Can have values for 'host', 'dir', and 'user'
    */
+  @Override
   public void doGenerate(List<FederateInstance> federates, RtiConfig rtiConfig) {
     // NOTE: It might be good to use screen when invoking the RTI
     // or federates remotely, so you can detach and the process keeps running.
@@ -194,49 +183,11 @@ public class FedLauncherGenerator {
                 "EXITED_SUCCESSFULLY=true"))
         .append("\n");
 
-    // Create bin directory for the script.
-    if (!Files.exists(fileConfig.binPath)) {
-      try {
-        Files.createDirectories(fileConfig.binPath);
-      } catch (IOException e) {
-        messageReporter.nowhere().error("Unable to create directory: " + fileConfig.binPath);
-      }
-    }
-
-    // Write the launcher file.
-    File file = fileConfig.binPath.resolve(fileConfig.name).toFile();
-    messageReporter.nowhere().info("Script for launching the federation: " + file);
-
-    // Delete file previously produced, if any.
-    if (file.exists()) {
-      if (!file.delete())
-        messageReporter
-            .nowhere()
-            .error("Failed to delete existing federated launch script \"" + file + "\"");
-    }
-
-    FileOutputStream fOut = null;
-    try {
-      fOut = new FileOutputStream(file);
-    } catch (FileNotFoundException e) {
-      messageReporter.nowhere().error("Unable to find file: " + file);
-    }
-    if (fOut != null) {
-      try {
-        fOut.write(shCode.toString().getBytes());
-        fOut.close();
-      } catch (IOException e) {
-        messageReporter.nowhere().error("Unable to write to file: " + file);
-      }
-    }
-
-    if (!file.setExecutable(true, false)) {
-      messageReporter.nowhere().warning("Unable to make launcher script executable.");
-    }
+    writeShellScript(shCode, fileConfig.name);
 
     // Write the distributor file.
     // Delete the file even if it does not get generated.
-    file = fileConfig.binPath.resolve(fileConfig.name + "_distribute.sh").toFile();
+    File file = fileConfig.binPath.resolve(fileConfig.name + "_distribute.sh").toFile();
     if (file.exists()) {
       if (!file.delete())
         messageReporter
@@ -245,7 +196,7 @@ public class FedLauncherGenerator {
     }
     if (distCode.length() > 0) {
       try {
-        fOut = new FileOutputStream(file);
+        FileOutputStream fOut = new FileOutputStream(file);
         fOut.write(distCode.toString().getBytes());
         fOut.close();
         if (!file.setExecutable(true, false)) {
