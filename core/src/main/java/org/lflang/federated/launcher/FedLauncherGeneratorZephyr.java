@@ -22,11 +22,8 @@ public class FedLauncherGeneratorZephyr extends FedLauncherGenerator {
   /**
    * Create the launcher shell script for Zephyr. This will create a single file in the output path
    * (bin directory) with name equal to the filename of the source file without the ".lf"
-   * extension. This script launches only the RTI with a fixed federation ID (42) and clock sync
-   * mode (init). Federates must be manually flashed to microcontrollers.
-   *
-   * @param federates A list of federate instances in the federation
-   * @param rtiConfig Can have values for 'host', 'dir', and 'user'
+   * extension. This script launches only the RTI with a fixed federation ID (42).
+   * Federates must be manually flashed to microcontrollers.
    */
   @Override
   public void doGenerate(List<FederateInstance> federates, RtiConfig rtiConfig) {
@@ -40,7 +37,8 @@ public class FedLauncherGeneratorZephyr extends FedLauncherGenerator {
     // Launch the RTI
     if (host.equals("fd01::1")) {
       shCode
-          .append(getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates)))
+          .append(
+              getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates, false)))
           .append("\n");
     } else {
       messageReporter.nowhere().error("Remote RTI launch is not supported for Zephyr target.");
@@ -86,10 +84,6 @@ public class FedLauncherGeneratorZephyr extends FedLauncherGenerator {
         "echo \"Federation " + fileConfig.name + " with Federation ID '42'\"");
   }
 
-  private String getRtiCommand(String rtiBinPath, List<FederateInstance> federates) {
-    return rtiBinPath + " -i 42 -n " + federates.size() + " -c init";
-  }
-
   private String getLaunchCode(String rtiLaunchCode) {
     String launchCodeWithLogging = rtiLaunchCode + " >& RTI.log &";
     String launchCodeWithoutLogging = rtiLaunchCode + " &";
@@ -97,8 +91,6 @@ public class FedLauncherGeneratorZephyr extends FedLauncherGenerator {
         "\n",
         "echo \"#### Launching the runtime infrastructure (RTI) for Zephyr.\"",
         "echo \"#### RTI will use federation ID: 42\"",
-        "echo \"#### Clock sync mode: init\"",
-        "echo \"#### Number of federates expected: " + "\" # Will be filled at runtime",
         "if [ \"$1\" = \"-l\" ]; then",
         "    " + launchCodeWithLogging,
         "else",

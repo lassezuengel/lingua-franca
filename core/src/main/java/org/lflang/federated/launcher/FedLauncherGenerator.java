@@ -5,11 +5,18 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import org.lflang.MessageReporter;
 import org.lflang.federated.generator.FederateInstance;
 import org.lflang.federated.generator.FederationFileConfig;
 import org.lflang.target.TargetConfig;
+import org.lflang.target.property.AuthProperty;
+import org.lflang.target.property.ClockSyncModeProperty;
+import org.lflang.target.property.ClockSyncOptionsProperty;
+import org.lflang.target.property.DNETProperty;
+import org.lflang.target.property.TracingProperty;
+import org.lflang.target.property.type.ClockSyncModeType.ClockSyncMode;
 
 /**
  * Abstract utility class that can be used to create a launcher for federated LF programs.
@@ -35,6 +42,49 @@ public abstract class FedLauncherGenerator {
   }
 
   public abstract void doGenerate(List<FederateInstance> federates, RtiConfig rtiConfig);
+
+  /**
+   * Generate the command to launch the RTI. This command is used in the generated shell script to
+   * launch the RTI with the appropriate options based on the target configuration.
+   */
+  protected String getRtiCommand(
+      String rtiBinPath, List<FederateInstance> federates, boolean isRemote) {
+    List<String> commands = new ArrayList<>();
+    if (isRemote) {
+      commands.add(rtiBinPath + " -i '${FEDERATION_ID}' \\");
+    } else {
+      commands.add(rtiBinPath + " -i ${FEDERATION_ID} \\");
+    }
+    if (targetConfig.getOrDefault(AuthProperty.INSTANCE)) {
+      commands.add("                        -a \\");
+    }
+    if (targetConfig.getOrDefault(TracingProperty.INSTANCE).isEnabled()) {
+      commands.add("                        -t \\");
+    }
+    if (!targetConfig.getOrDefault(DNETProperty.INSTANCE)) {
+      commands.add("                        -d \\");
+    }
+    commands.addAll(
+        List.of(
+            "                        -n " + federates.size() + " \\",
+            "                        -c "
+                + targetConfig.getOrDefault(ClockSyncModeProperty.INSTANCE).toString()
+                + " \\"));
+    if (targetConfig.getOrDefault(ClockSyncModeProperty.INSTANCE).equals(ClockSyncMode.ON)) {
+      commands.add(
+          "period "
+              + targetConfig.getOrDefault(ClockSyncOptionsProperty.INSTANCE).period.toNanoSeconds()
+              + " \\");
+    }
+    if (targetConfig.getOrDefault(ClockSyncModeProperty.INSTANCE).equals(ClockSyncMode.ON)
+        || targetConfig.getOrDefault(ClockSyncModeProperty.INSTANCE).equals(ClockSyncMode.INIT)) {
+      commands.add(
+          "exchanges-per-interval "
+              + targetConfig.getOrDefault(ClockSyncOptionsProperty.INSTANCE).trials
+              + " \\");
+    }
+    return String.join("\n", commands);
+  }
 
   /**
    * Write the shell script to a file.
