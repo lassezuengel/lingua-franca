@@ -38,7 +38,7 @@ public class FedLauncherGeneratorZephyr extends FedLauncherGenerator {
     if (host.equals("fd01::1")) {
       shCode
           .append(
-              getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates, false)))
+              getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates, "42", false)))
           .append("\n");
     } else {
       messageReporter.nowhere().error("Remote RTI launch is not supported for Zephyr target.");

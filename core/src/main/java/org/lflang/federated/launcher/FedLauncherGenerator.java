@@ -48,12 +48,12 @@ public abstract class FedLauncherGenerator {
    * launch the RTI with the appropriate options based on the target configuration.
    */
   protected String getRtiCommand(
-      String rtiBinPath, List<FederateInstance> federates, boolean isRemote) {
+      String rtiBinPath, List<FederateInstance> federates, String fedId, boolean isRemote) {
     List<String> commands = new ArrayList<>();
     if (isRemote) {
-      commands.add(rtiBinPath + " -i '${FEDERATION_ID}' \\");
+      commands.add(rtiBinPath + " -i '" + fedId + "' \\");
     } else {
-      commands.add(rtiBinPath + " -i ${FEDERATION_ID} \\");
+      commands.add(rtiBinPath + " -i " + fedId + "\\");
     }
     if (targetConfig.getOrDefault(AuthProperty.INSTANCE)) {
       commands.add("                        -a \\");

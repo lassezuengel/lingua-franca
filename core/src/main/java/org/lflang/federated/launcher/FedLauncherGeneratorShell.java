@@ -90,7 +90,7 @@ public class FedLauncherGeneratorShell extends FedLauncherGenerator {
       // FIXME: the paths below will not work on Windows
       shCode
           .append(
-              getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates, false)))
+              getLaunchCode(getRtiCommand(fileConfig.getRtiBinPath().toString(), federates, "${FEDERATION_ID}", false)))
           .append("\n");
     } else {
       // Copy the RTI to the remote machine and compile it there.
@@ -127,7 +127,7 @@ public class FedLauncherGeneratorShell extends FedLauncherGenerator {
                   host,
                   target,
                   logFileName,
-                  getRtiCommand(rtiConfig.getRtiBinPath(fileConfig), federates, true)))
+                  getRtiCommand(rtiConfig.getRtiBinPath(fileConfig), federates, "${FEDERATION_ID}", true)))
           .append("\n");
     }
 
