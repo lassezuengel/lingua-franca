@@ -35,6 +35,7 @@ import org.lflang.FileConfig;
 import org.lflang.ast.ASTUtils;
 import org.lflang.ast.DelayedConnectionTransformation;
 import org.lflang.federated.extensions.CExtensionUtils;
+import org.lflang.federated.generator.FederatedSubContext;
 import org.lflang.generator.ActionInstance;
 import org.lflang.generator.CodeBuilder;
 import org.lflang.generator.DelayBodyGenerator;
@@ -288,12 +289,6 @@ public class CGenerator extends GeneratorBase {
   //// Private fields
   /** Extra lines that need to go into the generated CMakeLists.txt. */
   private final String cMakeExtras = "";
-
-  /**
-   * Counter for the number of zephyr federates processed,
-   * used for unique identification of zephyr federates.
-   */
-  private static int zephyrFedCounter = 0;
 
   /** Place to collect code to execute at the start of a time step. */
   private final CodeBuilder startTimeStep = new CodeBuilder();
@@ -988,7 +983,15 @@ public class CGenerator extends GeneratorBase {
       // because newlib does not support regex functionality.
       config.property("PICOLIBC", "y");
 
-      var fedId = zephyrFedCounter++;
+      if (!(context instanceof FederatedSubContext federatedContext)) {
+        messageReporter
+            .nowhere()
+            .error("Federated Zephyr generation is missing federate context; aborting config.");
+        return;
+      }
+
+      var federate = federatedContext.getFederateInstance();
+      var fedId = federate.id;
       // Generate unique IPv6 address based on federate ID.
       // Start at 2 to avoid conflict with RTI at suffix ::1.
       String fedIpV6 = "";
@@ -998,10 +1001,25 @@ public class CGenerator extends GeneratorBase {
         messageReporter.nowhere().error("Failed to generate IPv6 address for federate #" + fedId);
       }
 
+      int inboundConnections = federate.inboundP2PConnections.size();
+      int outboundConnections = federate.outboundP2PConnections.size();
+
+      // We need one socket for each p2p connection and additional sockets for the RTI connection.
+      int connectionBudget = inboundConnections + outboundConnections + 2;
+      String maxConnections = Integer.toString(Math.max(0, connectionBudget));
+
       messageReporter
-          .nowhere()
-          .info(
-              "Generating Zephyr config for federate #" + fedId + " with IPv6 address " + fedIpV6);
+        .nowhere()
+        .info(
+          "Generating Zephyr config for federate #"
+            + fedId
+            + " with IPv6 address "
+            + fedIpV6
+            + " (p2p inbound="
+            + inboundConnections
+            + ", outbound="
+            + outboundConnections
+            + ")");
 
       config
           .heading("POSIX sockets and networking")
@@ -1017,6 +1035,7 @@ public class CGenerator extends GeneratorBase {
           .property("NET_PKT_TX_COUNT", "16")
           .property("NET_BUF_RX_COUNT", "64")
           .property("NET_BUF_TX_COUNT", "64")
+          // TODO: Investigate whether we need this.
           .property("NET_CONTEXT_NET_PKT_POOL", "y")
           .heading("IP address options")
           .property("NET_IF_UNICAST_IPV6_ADDR_COUNT", "3")
@@ -1032,6 +1051,7 @@ public class CGenerator extends GeneratorBase {
           .property("NET_CONFIG_MY_IPV6_ADDR", "\"" + fedIpV6 + "\"")
           // TODO: Make RTI address configurable or choose a better default.
           .property("NET_CONFIG_PEER_IPV6_ADDR", "\"fd01::1\"")
+          .property("NET_MAX_CONN", maxConnections)
           // TODO: This value should depend on the amount of p2p connections
           // (specifies the max allowed amount of open file descriptors).
           .property("ZVFS_OPEN_MAX", "16")

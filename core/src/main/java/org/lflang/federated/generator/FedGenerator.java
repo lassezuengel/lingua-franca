@@ -497,7 +497,8 @@ public class FedGenerator {
             DockerProperty.INSTANCE.override(subConfig, new DockerOptions(false));
 
             SubContext subContext =
-                new SubContext(context, IntegratedBuilder.VALIDATED_PERCENT_PROGRESS, 100) {
+              new FederatedSubContext(
+                context, IntegratedBuilder.VALIDATED_PERCENT_PROGRESS, 100, fed) {
                   @Override
                   public MessageReporter getErrorReporter() {
                     return subContextMessageReporter;
